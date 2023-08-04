@@ -24,13 +24,20 @@ interface LocationData {
 // 날씨 데이터
 interface Data {
   weather: { description: string }[];
+  main: { temp: number };
+}
+
+// 필터링한 데이터
+interface ArrData {
+  temp: number;
+  weather: string;
 }
 // ---------
 
 const App = () => {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [ok, setOk] = useState<boolean>(true);
-  const [days, setDays] = useState<Array<string> | null>(null);
+  const [days, setDays] = useState<Array<ArrData>>([]);
 
   const { EXPO_PUBLIC_WEATHER_API_KEY } = process.env;
 
@@ -57,12 +64,13 @@ const App = () => {
           district: locationData[0].district,
         };
 
-        // setLocation(locationDataMake);
+        setLocation(locationDataMake);
       }
 
       // 5일치, 3시간 간격의 날씨정보 API 요청
+      const changeMeasurement = "metric";
       const response = await axios.get(
-        `http://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${EXPO_PUBLIC_WEATHER_API_KEY}`
+        `http://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${EXPO_PUBLIC_WEATHER_API_KEY}&units=${changeMeasurement}`
       );
 
       // 필요한건 3시간 간격의 날씨가 아니라 데일리 날씨라 00시 기준으로
@@ -80,7 +88,9 @@ const App = () => {
             return true;
           }
         })
-        .map((el: Data) => el.weather[0].description);
+        .map((el: Data) => {
+          return { weather: el.weather[0].description, temp: el.main.temp };
+        });
 
       setDays(filterData);
     };
@@ -91,13 +101,16 @@ const App = () => {
     <View style={styles.container}>
       <StatusBar style="dark" />
       <View style={styles.city}>
-        <Text style={styles.cityName}>
-          {location === null ? (
-            <ActivityIndicator />
-          ) : (
-            `${location.country} ${location.city} ${location.district}`
-          )}
-        </Text>
+        {location === null ? (
+          <ActivityIndicator size="large" color="red" />
+        ) : (
+          <>
+            <Text style={styles.countryName}>
+              {location.country} {location.city}
+            </Text>
+            <Text style={styles.distName}> {location.district}</Text>
+          </>
+        )}
       </View>
       <ScrollView
         pagingEnabled
@@ -105,10 +118,22 @@ const App = () => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.weather}
       >
-        <View style={styles.day}>
-          <Text style={styles.temp}>27</Text>
-          <Text style={styles.desc}>sunny</Text>
-        </View>
+        {days.length === 0 ? (
+          <View style={styles.day}>
+            <ActivityIndicator
+              size="large"
+              color="red"
+              style={{ marginTop: 30 }}
+            />
+          </View>
+        ) : (
+          days.map((el, index) => (
+            <View style={styles.day} key={index}>
+              <Text style={styles.temp}>{el.temp.toFixed(1)}</Text>
+              <Text style={styles.desc}>{el.weather}</Text>
+            </View>
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -124,17 +149,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  cityName: {
-    fontSize: 25,
+  countryName: {
+    fontSize: 15,
+    fontWeight: "500",
+    marginBottom: 5,
+  },
+  distName: {
+    fontSize: 38,
     fontWeight: "500",
   },
   weather: {},
   day: {
     width: SCREEN_WIDTH,
-    alignItems: "center",
+    // backgroundColor: "red",
   },
-  temp: { marginTop: 30, fontSize: 178 },
-  desc: { marginTop: -30, fontSize: 60 },
+  temp: { fontSize: 140, paddingLeft: 20 },
+  desc: { marginTop: -20, fontSize: 25, paddingLeft: 40 },
 });
 
 export default App;

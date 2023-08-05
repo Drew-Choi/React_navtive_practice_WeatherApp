@@ -16,7 +16,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const App = () => {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [ok, setOk] = useState<boolean>(true);
-  const [days, setDays] = useState<Array<ArrData>>([]);
+  const [days, setDays] = useState<Array<DatesObject>>([]);
 
   const { EXPO_PUBLIC_WEATHER_API_KEY } = process.env;
 
@@ -58,43 +58,33 @@ const App = () => {
 
       const datesArr: Array<DatesObject> = [...new Set(dates)].map(
         (date: string) => {
-          let time = response.data.list
+          let elements = response.data.list
             .filter((rawData: Data) => rawData.dt_txt.slice(0, 10) === date)
             .map((rawData: Data) => {
               let [hour] = rawData.dt_txt.slice(11).split(":");
-              return Number(hour);
+
+              let newData: NewData = {
+                time: Number(hour),
+                weather: rawData.weather[0].description,
+                temp: rawData.main.temp,
+              };
+
+              return newData;
             });
 
-          let obj: DatesObject = { date, time };
+          let obj: DatesObject = { date, elements };
           return obj;
         }
       );
 
       console.log(datesArr);
 
-      // 필요한건 3시간 간격의 날씨가 아니라 데일리 날씨라 00시 기준으로
-      // 데이터 필터링
-      // let pre = 0;
-      // const filterData = await response.data.list
-      //   .filter((_: Data, index: number) => {
-      //     if (index === 0) {
-      //       return true;
-      //     } else if (index === 4) {
-      //       pre = index;
-      //       return true;
-      //     } else if (index === pre + 8) {
-      //       pre = index;
-      //       return true;
-      //     }
-      //   })
-      //   .map((el: Data) => {
-      //     return { weather: el.weather[0].description, temp: el.main.temp };
-      //   });
-
-      // setDays(filterData);
+      setDays(datesArr);
     };
     ask();
   }, []);
+
+  console.log(new Date());
 
   return (
     <View style={styles.container}>
@@ -128,8 +118,10 @@ const App = () => {
         ) : (
           days.map((el, index) => (
             <View style={styles.day} key={index}>
-              <Text style={styles.temp}>{el.temp.toFixed(1)}</Text>
-              <Text style={styles.desc}>{el.weather}</Text>
+              <Text style={styles.date}>{el.date}</Text>
+              {el.elements.map((time) => (
+                <Text style={styles.desc}>{time.time}</Text>
+              ))}
             </View>
           ))
         )}
@@ -162,6 +154,7 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     // backgroundColor: "red",
   },
+  date: { fontSize: 20, paddingLeft: 20 },
   temp: { fontSize: 140, paddingLeft: 20 },
   desc: { marginTop: -20, fontSize: 25, paddingLeft: 40 },
 });

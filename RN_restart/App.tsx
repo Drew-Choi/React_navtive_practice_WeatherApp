@@ -13,27 +13,6 @@ import axios from "axios";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// tyep ----
-// 로케이션 데이터
-interface LocationData {
-  country: string | null;
-  city: string | null;
-  district: string | null;
-}
-
-// 날씨 데이터
-interface Data {
-  weather: { description: string }[];
-  main: { temp: number };
-}
-
-// 필터링한 데이터
-interface ArrData {
-  temp: number;
-  weather: string;
-}
-// ---------
-
 const App = () => {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [ok, setOk] = useState<boolean>(true);
@@ -72,27 +51,38 @@ const App = () => {
       const response = await axios.get(
         `http://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${EXPO_PUBLIC_WEATHER_API_KEY}&units=${changeMeasurement}`
       );
+      console.log(response.data.list[0]);
+
+      const dates = response.data.list.map((el: Data) => {
+        const date = el.dt_txt.slice(0, 10);
+        const timeString = el.dt_txt.slice(11);
+        let obj: DatesObject = { date, time: [timeString] };
+        return obj;
+      });
+      const datesArr = [...new Set(dates)];
+
+      console.log(datesArr);
 
       // 필요한건 3시간 간격의 날씨가 아니라 데일리 날씨라 00시 기준으로
       // 데이터 필터링
-      let pre = 0;
-      const filterData = await response.data.list
-        .filter((_: Data, index: number) => {
-          if (index === 0) {
-            return true;
-          } else if (index === 4) {
-            pre = index;
-            return true;
-          } else if (index === pre + 8) {
-            pre = index;
-            return true;
-          }
-        })
-        .map((el: Data) => {
-          return { weather: el.weather[0].description, temp: el.main.temp };
-        });
+      // let pre = 0;
+      // const filterData = await response.data.list
+      //   .filter((_: Data, index: number) => {
+      //     if (index === 0) {
+      //       return true;
+      //     } else if (index === 4) {
+      //       pre = index;
+      //       return true;
+      //     } else if (index === pre + 8) {
+      //       pre = index;
+      //       return true;
+      //     }
+      //   })
+      //   .map((el: Data) => {
+      //     return { weather: el.weather[0].description, temp: el.main.temp };
+      //   });
 
-      setDays(filterData);
+      // setDays(filterData);
     };
     ask();
   }, []);

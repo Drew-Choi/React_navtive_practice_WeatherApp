@@ -51,15 +51,24 @@ const App = () => {
       const response = await axios.get(
         `http://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${EXPO_PUBLIC_WEATHER_API_KEY}&units=${changeMeasurement}`
       );
-      console.log(response.data.list[0]);
 
-      const dates = response.data.list.map((el: Data) => {
-        const date = el.dt_txt.slice(0, 10);
-        const timeString = el.dt_txt.slice(11);
-        let obj: DatesObject = { date, time: [timeString] };
-        return obj;
-      });
-      const datesArr = [...new Set(dates)];
+      const dates: string[] = await response.data.list.map((el: Data) =>
+        el.dt_txt.slice(0, 10)
+      );
+
+      const datesArr: Array<DatesObject> = [...new Set(dates)].map(
+        (date: string) => {
+          let time = response.data.list
+            .filter((rawData: Data) => rawData.dt_txt.slice(0, 10) === date)
+            .map((rawData: Data) => {
+              let [hour] = rawData.dt_txt.slice(11).split(":");
+              return Number(hour);
+            });
+
+          let obj: DatesObject = { date, time };
+          return obj;
+        }
+      );
 
       console.log(datesArr);
 

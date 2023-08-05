@@ -16,7 +16,15 @@ interface Data {
 // 날씨 데이터 날짜 필터용
 interface DatesObject {
   date: string;
-  time: string[];
+  time: number[];
+  weather?: string;
+  temp?: number;
+}
+
+interface NewData {
+  times: number[],
+  weather: string[],
+  temp: number[],
 }
 
 // 필터링한 데이터

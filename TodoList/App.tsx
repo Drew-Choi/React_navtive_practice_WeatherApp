@@ -7,17 +7,27 @@ import {
   View,
   TouchableHighlight,
   TextInput,
+  ScrollView,
 } from "react-native";
 
 export default function App() {
   const [working, setWorking] = useState<boolean>(true);
   const [text, setText] = useState<string>("");
+  const [todos, setTodos] = useState<TodosType>({});
   const travel = () => setWorking(false);
   const work = () => setWorking(true);
   const textHandler = (event: string) => setText(event);
   const addTodo = () => {
-    alert(text);
+    if (text === "") {
+      return;
+    }
+    setTodos((cur) => {
+      return { ...cur, [Date.now()]: { text, work: working } };
+    });
+    setText("");
   };
+
+  console.log(todos);
 
   return (
     <View style={styles.container}>
@@ -46,10 +56,17 @@ export default function App() {
         onSubmitEditing={addTodo}
         onChangeText={textHandler}
         value={text}
-        returnKeyType="send"
+        returnKeyType="done"
         placeholder={working ? "Add a To Do" : "Where do you want to go?"}
         style={styles.input}
       />
+      <ScrollView>
+        {Object.keys(todos).map((key) => (
+          <View style={styles.todo} key={key}>
+            <Text style={styles.todoText}>{todos[key].text}</Text>
+          </View>
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -77,4 +94,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 18,
   },
+  todo: {},
+  todoText: { color: "white" },
 });

@@ -1,27 +1,55 @@
 import { theme } from "./color";
 import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   TouchableHighlight,
-  TouchableWithoutFeedback,
+  TextInput,
 } from "react-native";
 
 export default function App() {
+  const [working, setWorking] = useState<boolean>(true);
+  const [text, setText] = useState<string>("");
+  const travel = () => setWorking(false);
+  const work = () => setWorking(true);
+  const textHandler = (event: string) => setText(event);
+  const addTodo = () => {
+    alert(text);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <TouchableOpacity>
-          <Text style={styles.btnText}>Work</Text>
-        </TouchableOpacity>
+        <TouchableHighlight onPress={work}>
+          <Text
+            style={{ ...styles.btnText, color: working ? "white" : theme.grey }}
+          >
+            Work
+          </Text>
+        </TouchableHighlight>
 
-        <TouchableWithoutFeedback onPress={() => console.log("press")}>
-          <Text style={styles.btnText}>Travel</Text>
-        </TouchableWithoutFeedback>
+        <TouchableHighlight onPress={travel}>
+          <Text
+            style={{
+              ...styles.btnText,
+              color: !working ? "white" : theme.grey,
+            }}
+          >
+            Travel
+          </Text>
+        </TouchableHighlight>
       </View>
+      <TextInput
+        onSubmitEditing={addTodo}
+        onChangeText={textHandler}
+        value={text}
+        returnKeyType="send"
+        placeholder={working ? "Add a To Do" : "Where do you want to go?"}
+        style={styles.input}
+      />
     </View>
   );
 }
@@ -40,6 +68,13 @@ const styles = StyleSheet.create({
   btnText: {
     fontSize: 38,
     fontWeight: "600",
-    color: "white",
+  },
+  input: {
+    backgroundColor: "white",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    marginTop: 20,
+    fontSize: 18,
   },
 });

@@ -21,6 +21,16 @@ export default function App() {
   const [todos, setTodos] = useState<TodosType>({});
   const isFocus = useRef<TextInput[]>([]);
 
+  // 소환형 함수
+  // Async스토리지에 추가
+  const saveToDos = useCallback(async (saveToDoObj: TodosType) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(saveToDoObj));
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   // hadler
   // 메뉴 카테고리 핸들러
   const travel = async () => {
@@ -32,15 +42,6 @@ export default function App() {
     await AsyncStorage.setItem(STATUS_KEY, "true");
     setWorking(true);
   };
-
-  // Async스토리지에 추가
-  const saveToDos = useCallback(async (saveToDoObj: TodosType) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(saveToDoObj));
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
 
   // todo리스트 삭제 핸들러
   const toDoDelete = async (key: string) => {
@@ -92,7 +93,6 @@ export default function App() {
         (acc, key) => (todos[key].edit === true ? acc + 1 : acc),
         0
       );
-      console.log(result);
       if (result === 0 && !todos[key].complete) {
         setTodos((cur) => {
           return {
@@ -106,6 +106,18 @@ export default function App() {
     },
     [todos]
   );
+
+  // complete 체크 박스 자료 업데이트
+  const completeCheckBox = async (key: string) => {
+    if (!todos[key].edit) {
+      let newTodo = {
+        ...todos,
+        [key]: { ...todos[key], complete: !todos[key].complete },
+      };
+      await saveToDos(newTodo);
+      setTodos(newTodo);
+    }
+  };
 
   // useEffect
   useEffect(() => {
@@ -215,16 +227,7 @@ export default function App() {
                 style={styles.checkBox}
                 color={theme.light_grey}
                 value={todos[key].complete}
-                onValueChange={() => {
-                  if (!todos[key].edit) {
-                    setTodos((cur: TodosType): TodosType => {
-                      return {
-                        ...cur,
-                        [key]: { ...cur[key], complete: !cur[key].complete },
-                      };
-                    });
-                  }
-                }}
+                onValueChange={() => completeCheckBox(key)}
               />
               <TouchableHighlight onPress={() => editMode(key)}>
                 <Feather

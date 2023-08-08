@@ -19,18 +19,19 @@ export default function App() {
   const [working, setWorking] = useState<boolean>(true);
   const [text, setText] = useState<string>("");
   const [todos, setTodos] = useState<TodosType>({});
+  const isFocus = useRef<TextInput[]>([]);
 
   // hadler
   // 메뉴 카테고리 핸들러
-  const travel = useCallback(async () => {
+  const travel = async () => {
     await AsyncStorage.setItem(STATUS_KEY, "false");
     setWorking(false);
-  }, []);
+  };
 
-  const work = useCallback(async () => {
+  const work = async () => {
     await AsyncStorage.setItem(STATUS_KEY, "true");
     setWorking(true);
-  }, []);
+  };
 
   // Async스토리지에 추가
   const saveToDos = useCallback(async (saveToDoObj: TodosType) => {
@@ -42,29 +43,26 @@ export default function App() {
   }, []);
 
   // todo리스트 삭제 핸들러
-  const toDoDelete = useCallback(
-    async (key: string) => {
-      Alert.alert("리스트 삭제", "정말 삭제하시겠습니까?", [
-        {
-          text: "Cancel",
-          onPress: () => {
-            return;
-          },
-          style: "destructive",
+  const toDoDelete = async (key: string) => {
+    Alert.alert("리스트 삭제", "정말 삭제하시겠습니까?", [
+      {
+        text: "Cancel",
+        onPress: () => {
+          return;
         },
-        {
-          text: "Sure",
-          onPress: () => {
-            const newTodos = { ...todos };
-            delete newTodos[key];
-            setTodos(newTodos);
-            saveToDos(newTodos);
-          },
+        style: "destructive",
+      },
+      {
+        text: "Sure",
+        onPress: () => {
+          const newTodos = { ...todos };
+          delete newTodos[key];
+          setTodos(newTodos);
+          saveToDos(newTodos);
         },
-      ]);
-    },
-    [todos]
-  );
+      },
+    ]);
+  };
 
   // todo리스트 추가 핸들러
   const addTodo = async () => {
@@ -81,11 +79,30 @@ export default function App() {
   };
 
   // 수정본 저장
-  const editTodo = useCallback(
-    async (key: string) => {
-      const newTodo = { ...todos, [key]: { ...todos[key], edit: false } };
-      await saveToDos(newTodo);
-      setTodos(newTodo);
+  const editTodo = async (key: string) => {
+    const newTodo = { ...todos, [key]: { ...todos[key], edit: false } };
+    await saveToDos(newTodo);
+    setTodos(newTodo);
+  };
+
+  // edit모드 핸들러
+  const editMode = useCallback(
+    (key: string) => {
+      const result = Object.keys(todos).reduce(
+        (acc, key) => (todos[key].edit === true ? acc + 1 : acc),
+        0
+      );
+      console.log(result);
+      if (result === 0 && !todos[key].complete) {
+        setTodos((cur) => {
+          return {
+            ...cur,
+            [key]: { ...cur[key], edit: true },
+          };
+        });
+      } else {
+        return;
+      }
     },
     [todos]
   );
@@ -118,6 +135,17 @@ export default function App() {
     setStatus();
     loadToDos();
   }, []);
+
+  useEffect(() => {
+    // todos가 변경될 때 실행되는 부분
+    isFocus.current.forEach((ref, index) => {
+      const key = Object.keys(todos)[index];
+
+      if (todos[key].edit && ref) {
+        ref.focus();
+      }
+    });
+  }, [todos]);
 
   return (
     <View style={styles.container}>
@@ -152,7 +180,7 @@ export default function App() {
         style={styles.input}
       />
       <ScrollView>
-        {Object.keys(todos).map((key) =>
+        {Object.keys(todos).map((key, index) =>
           todos[key].working === working ? (
             <View style={styles.todo} key={key}>
               <TextInput
@@ -176,7 +204,12 @@ export default function App() {
                   });
                 }}
                 editable={!todos[key].edit ? false : true}
-                // multiline={true}
+                autoFocus={!todos[key].edit ? false : true}
+                ref={(cur) => {
+                  if (cur) {
+                    isFocus.current[index] = cur;
+                  }
+                }}
               />
               <Checkbox
                 style={styles.checkBox}
@@ -193,18 +226,7 @@ export default function App() {
                   }
                 }}
               />
-              <TouchableHighlight
-                onPress={() => {
-                  if (!todos[key].complete) {
-                    setTodos((cur) => {
-                      return {
-                        ...cur,
-                        [key]: { ...cur[key], edit: true },
-                      };
-                    });
-                  }
-                }}
-              >
+              <TouchableHighlight onPress={() => editMode(key)}>
                 <Feather
                   style={styles.editIcon}
                   name="refresh-cw"
